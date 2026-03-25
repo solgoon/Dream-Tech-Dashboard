@@ -88,7 +88,7 @@ export function transformProjectDetails(raw) {
     directCost: Number(r[PD.directCost]) || 0,
     grossProfit: Number(r[PD.grossProfit]) || 0,
     grossMargin: Number(r[PD.grossMargin]) || 0,
-    isTotal: String(r[PD.num]) === 'TOTALS',
+    isTotal: String(r[PD.num]).toUpperCase().includes('TOTAL') || String(r[PD.client]).toUpperCase().includes('TOTAL'),
   }));
 }
 
@@ -127,6 +127,7 @@ export function transformEquipmentResale(raw) {
     description: String(r[3]),
     revenue: Number(r[4]) || 0,
     buyerType: String(r[5]),
+    isTotal: String(r[0]).toUpperCase().includes('TOTAL'),
   }));
 }
 
