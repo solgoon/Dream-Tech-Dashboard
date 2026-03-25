@@ -88,7 +88,7 @@ export function transformProjectDetails(raw) {
     directCost: Number(r[PD.directCost]) || 0,
     grossProfit: Number(r[PD.grossProfit]) || 0,
     grossMargin: Number(r[PD.grossMargin]) || 0,
-    isTotal: String(r[PD.num]).toUpperCase().includes('TOTAL') || String(r[PD.client]).toUpperCase().includes('TOTAL'),
+    isTotal: !(Number(r[PD.num]) > 0) || String(r[PD.num]).toUpperCase().includes('TOTAL') || String(r[PD.client]).toUpperCase().includes('TOTAL'),
   }));
 }
 
@@ -149,6 +149,6 @@ export function transformLaborDetail(raw) {
     specialistCost: Number(r[LD.specialistCost]) || 0,
     totalLabor: Number(r[LD.totalLabor]) || 0,
     pctAward: Number(r[LD.pctAward]) || 0,
-    isTotal: String(r[LD.num]).toUpperCase().includes('TOTAL') || String(r[LD.project]).toUpperCase().includes('TOTAL'),
+    isTotal: !(Number(r[LD.num]) > 0) || String(r[LD.num]).toUpperCase().includes('TOTAL') || String(r[LD.project]).toUpperCase().includes('TOTAL'),
   }));
 }
