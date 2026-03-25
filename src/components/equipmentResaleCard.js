@@ -14,9 +14,10 @@ function getYearFromQuarter(q) {
 }
 
 export function renderEquipmentChart(canvas, data) {
-  const labels = data.map(r => r.quarter);
-  const revenues = data.map(r => r.revenue);
-  const colors = data.map(r => YEAR_COLORS[getYearFromQuarter(r.quarter)] || YEAR_COLORS['2023']);
+  const chartData = data.filter(r => !r.isTotal);
+  const labels = chartData.map(r => r.quarter);
+  const revenues = chartData.map(r => r.revenue);
+  const colors = chartData.map(r => YEAR_COLORS[getYearFromQuarter(r.quarter)] || YEAR_COLORS['2023']);
 
   new Chart(canvas, {
     type: 'bar',
@@ -41,7 +42,7 @@ export function renderEquipmentChart(canvas, data) {
           borderColor: '#2a2a3e',
           borderWidth: 1,
           callbacks: {
-            afterLabel: (ctx) => `Items sold: ${data[ctx.dataIndex].itemsSold}`,
+            afterLabel: (ctx) => `Items sold: ${chartData[ctx.dataIndex].itemsSold}`,
             label: (ctx) => `Revenue: ${formatCurrency(ctx.parsed.y)}`,
           },
         },
@@ -58,6 +59,7 @@ export function renderEquipmentChart(canvas, data) {
 }
 
 export function renderEquipmentResale(container, data) {
+  const rows = data.filter(r => !r.isTotal);
   let totalItems = 0;
   let totalRevenue = 0;
 
@@ -66,7 +68,7 @@ export function renderEquipmentResale(container, data) {
     <th>Description</th><th class="num">Revenue</th>
   </tr></thead><tbody>`;
 
-  for (const row of data) {
+  for (const row of rows) {
     totalItems += row.itemsSold;
     totalRevenue += row.revenue;
     const desc = row.description.length > 40 ? row.description.slice(0, 40) + '…' : row.description;
