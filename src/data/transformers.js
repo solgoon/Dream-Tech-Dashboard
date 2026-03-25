@@ -149,6 +149,6 @@ export function transformLaborDetail(raw) {
     specialistCost: Number(r[LD.specialistCost]) || 0,
     totalLabor: Number(r[LD.totalLabor]) || 0,
     pctAward: Number(r[LD.pctAward]) || 0,
-    isTotal: String(r[LD.num]) === 'TOTALS' || String(r[LD.project]).includes('TOTAL'),
+    isTotal: String(r[LD.num]).toUpperCase().includes('TOTAL') || String(r[LD.project]).toUpperCase().includes('TOTAL'),
   }));
 }
