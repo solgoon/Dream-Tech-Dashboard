@@ -9,10 +9,10 @@ import {
 } from './data/transformers.js';
 import { renderKpiBar } from './components/kpiBar.js';
 import { renderTrendChart, updateTrendChart } from './components/revenueTrendChart.js';
-import { renderAnnualSummary } from './components/annualSummaryCard.js';
-import { renderEquipmentResale } from './components/equipmentResaleCard.js';
-import { renderProjectDetails } from './components/projectDetailsTable.js';
-import { renderLaborDetails } from './components/laborDetailsCard.js';
+import { renderAnnualSummary, renderAnnualSummaryChart } from './components/annualSummaryCard.js';
+import { renderEquipmentResale, renderEquipmentChart } from './components/equipmentResaleCard.js';
+import { renderProjectDetails, renderProjectCharts } from './components/projectDetailsTable.js';
+import { renderLaborDetails, renderLaborChart } from './components/laborDetailsCard.js';
 
 async function init() {
   const loading = document.getElementById('loading');
@@ -32,7 +32,7 @@ async function init() {
     loading.style.display = 'none';
     dashboard.style.display = '';
 
-    // KPI bar
+    // KPI bar (with sparklines)
     renderKpiBar(document.getElementById('kpi-bar'), { annualSummary, monthlyPL, projectDetails });
 
     // Trend chart
@@ -49,16 +49,24 @@ async function init() {
       updateTrendChart(btn.dataset.period, monthlyPL);
     });
 
-    // Annual summary
+    // Annual summary — chart + condensed table
+    renderAnnualSummaryChart(document.getElementById('annual-chart'), annualSummary);
     renderAnnualSummary(document.getElementById('annual-summary-table'), annualSummary);
 
-    // Equipment resale
+    // Equipment resale — chart + trimmed table
+    renderEquipmentChart(document.getElementById('equipment-chart'), equipmentResale);
     renderEquipmentResale(document.getElementById('equipment-table'), equipmentResale);
 
-    // Project details
+    // Project details — bar + doughnut charts + trimmed table
+    renderProjectCharts(
+      document.getElementById('projects-bar-chart'),
+      document.getElementById('projects-doughnut-chart'),
+      projectDetails
+    );
     renderProjectDetails(document.getElementById('projects-table'), projectDetails);
 
-    // Labor details
+    // Labor details — stacked bar chart + trimmed table
+    renderLaborChart(document.getElementById('labor-chart'), laborDetail);
     renderLaborDetails(document.getElementById('labor-table'), laborDetail);
 
     // Last updated

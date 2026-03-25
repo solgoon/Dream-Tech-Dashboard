@@ -34,6 +34,12 @@
   letter-spacing: -0.02em;
 }
 
+.kpi-value-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .kpi-sub {
   font-size: 0.75rem;
   color: var(--text-muted);
@@ -41,6 +47,13 @@
 
 .kpi-value.positive { color: var(--success); }
 .kpi-value.accent { color: var(--accent-light); }
+
+.mini-chart {
+  display: inline-block;
+  width: 60px;
+  height: 24px;
+  vertical-align: middle;
+}
 
 @media (max-width: 768px) {
   .kpi-bar {
