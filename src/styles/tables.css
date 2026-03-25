@@ -1,0 +1,90 @@
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+thead th {
+  text-align: left;
+  padding: 10px 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border-card);
+  position: sticky;
+  top: 0;
+  background: var(--bg-card);
+}
+
+thead th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+thead th.sortable:hover {
+  color: var(--accent-light);
+}
+
+thead th .sort-arrow {
+  margin-left: 4px;
+  font-size: 0.7rem;
+  opacity: 0.5;
+}
+
+thead th.sort-asc .sort-arrow::after { content: '▲'; }
+thead th.sort-desc .sort-arrow::after { content: '▼'; }
+
+tbody td {
+  padding: 8px 12px;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+tbody tr:hover {
+  background: var(--bg-card-hover);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Totals row styling */
+tbody tr.row-total td {
+  font-weight: 600;
+  border-top: 2px solid var(--border-card);
+  color: var(--accent-light);
+}
+
+/* Section header rows in annual summary */
+tbody tr.row-section td {
+  font-weight: 700;
+  color: var(--text-secondary);
+  padding-top: 14px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Indented rows */
+tbody td.indent {
+  padding-left: 24px;
+}
+
+/* Numeric alignment */
+td.num, th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Margin coloring */
+.margin-good { color: var(--success); }
+.margin-ok { color: var(--warning); }
+.margin-bad { color: var(--danger); }

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dream's Technology Service — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="app">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <h1>Dream's Technology Service</h1>
+        <span class="header-subtitle">Financial Dashboard</span>
+      </div>
+      <div class="header-right">
+        <span id="last-updated" class="last-updated"></span>
+      </div>
+    </header>
+
+    <div id="loading" class="loading-overlay">
+      <div class="spinner"></div>
+      <p>Loading dashboard data…</p>
+    </div>
+
+    <main class="dashboard-grid" id="dashboard" style="display:none;">
+      <section id="kpi-bar" class="kpi-bar"></section>
+
+      <section class="card card-full" id="trend-card">
+        <div class="card-header">
+          <h2>Revenue & Expense Trends</h2>
+          <div class="toggle-group" id="trend-toggle">
+            <button class="toggle-btn active" data-period="monthly">Monthly</button>
+            <button class="toggle-btn" data-period="quarterly">Quarterly</button>
+            <button class="toggle-btn" data-period="annual">Annual</button>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="trend-chart"></canvas>
+        </div>
+      </section>
+
+      <section class="card card-half" id="annual-summary-card">
+        <div class="card-header"><h2>Annual Summary</h2></div>
+        <div class="table-scroll" id="annual-summary-table"></div>
+      </section>
+
+      <section class="card card-half" id="equipment-card">
+        <div class="card-header"><h2>Equipment Resale Log</h2></div>
+        <div class="table-scroll" id="equipment-table"></div>
+      </section>
+
+      <section class="card card-full" id="projects-card">
+        <div class="card-header"><h2>Project Details</h2></div>
+        <div class="table-scroll" id="projects-table"></div>
+      </section>
+
+      <section class="card card-full" id="labor-card">
+        <div class="card-header"><h2>Labor Details</h2></div>
+        <div class="table-scroll" id="labor-table"></div>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
