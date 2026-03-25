@@ -1,8 +1,6 @@
-import { Chart, BarController, LineController, BarElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler } from 'chart.js';
+import { Chart } from '../data/chartSetup.js';
 import { shortMonth, formatCurrency } from '../utils/formatting.js';
 import { aggregateMonthly, aggregateQuarterly, aggregateAnnual } from '../data/transformers.js';
-
-Chart.register(BarController, LineController, BarElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler);
 
 let chart = null;
 

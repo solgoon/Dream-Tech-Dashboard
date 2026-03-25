@@ -44,21 +44,38 @@
 
       <section class="card card-half" id="annual-summary-card">
         <div class="card-header"><h2>Annual Summary</h2></div>
+        <div class="chart-container chart-sm">
+          <canvas id="annual-chart"></canvas>
+        </div>
         <div class="table-scroll" id="annual-summary-table"></div>
       </section>
 
       <section class="card card-half" id="equipment-card">
         <div class="card-header"><h2>Equipment Resale Log</h2></div>
+        <div class="chart-container chart-sm">
+          <canvas id="equipment-chart"></canvas>
+        </div>
         <div class="table-scroll" id="equipment-table"></div>
       </section>
 
       <section class="card card-full" id="projects-card">
         <div class="card-header"><h2>Project Details</h2></div>
+        <div class="chart-row">
+          <div class="chart-container chart-md">
+            <canvas id="projects-bar-chart"></canvas>
+          </div>
+          <div class="chart-container chart-md chart-doughnut-wrap">
+            <canvas id="projects-doughnut-chart"></canvas>
+          </div>
+        </div>
         <div class="table-scroll" id="projects-table"></div>
       </section>
 
       <section class="card card-full" id="labor-card">
         <div class="card-header"><h2>Labor Details</h2></div>
+        <div class="chart-container chart-md">
+          <canvas id="labor-chart"></canvas>
+        </div>
         <div class="table-scroll" id="labor-table"></div>
       </section>
     </main>
