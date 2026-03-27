@@ -1,3 +1,8 @@
+html:has(#welcome-overlay:not(.hidden)),
+html:has(#welcome-overlay:not(.hidden)) body {
+  overflow: hidden;
+}
+
 #welcome-overlay {
   position: fixed;
   inset: 0;

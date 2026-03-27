@@ -14,17 +14,17 @@ export function createEarthCanvasTexture() {
   const ctx = canvas.getContext('2d');
 
   // Ocean — near-black
-  ctx.fillStyle = '#05050a';
+  ctx.fillStyle = '#06060c';
   ctx.fillRect(0, 0, W, H);
 
   // Convert lng/lat → canvas x/y (equirectangular projection)
   const toX = (lng) => ((lng + 180) / 360) * W;
   const toY = (lat) => ((90 - lat) / 180) * H;
 
-  // Draw land polygons
-  ctx.fillStyle = '#1e1e24';
-  ctx.strokeStyle = '#2a2a32';
-  ctx.lineWidth = 1;
+  // Draw land polygons — lighter gray for visibility
+  ctx.fillStyle = '#48484f';
+  ctx.strokeStyle = '#5a5a62';
+  ctx.lineWidth = 1.2;
 
   for (const ring of LAND_POLYGONS) {
     ctx.beginPath();
