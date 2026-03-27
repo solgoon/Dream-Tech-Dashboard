@@ -1,4 +1,8 @@
 import './styles/index.css';
+import './styles/welcome.css';
+import { initWelcome } from './welcome.js';
+
+initWelcome();
 import { fetchAllTabs } from './data/sheetsApi.js';
 import {
   transformMonthlyPL,
