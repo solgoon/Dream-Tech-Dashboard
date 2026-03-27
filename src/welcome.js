@@ -80,19 +80,19 @@ export function initWelcome() {
         // Land/ocean mask from real coastline texture
         float mask = texture2D(uTexture, vUv).r;
 
-        // Black/gray palette
-        vec3 ocean = vec3(0.02, 0.02, 0.04);
-        vec3 land  = vec3(0.12, 0.12, 0.14);
+        // Black/gray palette — brighter land for visibility
+        vec3 ocean = vec3(0.03, 0.03, 0.05);
+        vec3 land  = vec3(0.30, 0.30, 0.34);
         vec3 baseColor = mix(ocean, land, mask);
 
-        // Polar regions — slightly lighter gray
+        // Polar regions — lighter gray
         float polar = smoothstep(0.72, 0.88, abs(vPos.y));
-        baseColor = mix(baseColor, vec3(0.18, 0.18, 0.20), polar * mask);
+        baseColor = mix(baseColor, vec3(0.35, 0.35, 0.38), polar * mask);
 
-        // Diffuse lighting
+        // Diffuse lighting — higher ambient so land is always visible
         float diff = max(dot(vNormal, uLightDir), 0.0);
-        float ambient = 0.08;
-        vec3 lit = baseColor * (ambient + diff * 0.92);
+        float ambient = 0.25;
+        vec3 lit = baseColor * (ambient + diff * 0.75);
 
         // Specular on oceans — cool gray
         vec3 viewDir = vec3(0.0, 0.0, 1.0);
@@ -119,6 +119,7 @@ export function initWelcome() {
   });
 
   const earth = new THREE.Mesh(earthGeo, earthMat);
+  earth.rotation.y = 74 * (Math.PI / 180); // Start centered on New York
   scene.add(earth);
 
   // ── Atmosphere glow (outer shell) — silver-gray ────────────────────────────
@@ -149,13 +150,14 @@ export function initWelcome() {
   scene.add(new THREE.Mesh(atmosGeo, atmosMat));
 
   // ── Mouse → rotation target ────────────────────────────────────────────────
+  // New York is at longitude -74°; rotate globe so NY faces camera when cursor is centered
+  const NY_OFFSET_Y = 74 * (Math.PI / 180); // ≈ 1.29 rad
   const mouse = { x: 0, y: 0 };
   const target = { x: 0, y: 0 };
-  const autoSpin = { y: 0 };
 
   window.addEventListener('mousemove', (e) => {
-    mouse.x = (e.clientX / window.innerWidth - 0.5) * 2;
-    mouse.y = (e.clientY / window.innerHeight - 0.5) * 2;
+    mouse.x = (e.clientX / window.innerWidth - 0.5) * 2;   // -1 … +1
+    mouse.y = (e.clientY / window.innerHeight - 0.5) * 2;  // -1 … +1
   });
 
   // ── Resize ─────────────────────────────────────────────────────────────────
@@ -173,13 +175,12 @@ export function initWelcome() {
     rafId = requestAnimationFrame(animate);
     const delta = clock.getDelta();
 
-    autoSpin.y += delta * 0.06;
+    // Full π range: cursor at edge → globe rotates 180° from center
+    target.x = mouse.y * 0.8;
+    target.y = mouse.x * Math.PI + NY_OFFSET_Y;
 
-    target.x = mouse.y * 0.55;
-    target.y = mouse.x * 1.2 + autoSpin.y;
-
-    earth.rotation.x += (target.x - earth.rotation.x) * 0.06;
-    earth.rotation.y += (target.y - earth.rotation.y) * 0.06;
+    earth.rotation.x += (target.x - earth.rotation.x) * 0.08;
+    earth.rotation.y += (target.y - earth.rotation.y) * 0.08;
 
     renderer.render(scene, camera);
   }
