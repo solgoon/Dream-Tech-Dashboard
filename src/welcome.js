@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createEarthCanvasTexture } from './utils/earthTexture.js';
 
 export function initWelcome() {
   const overlay = document.getElementById('welcome-overlay');
@@ -33,12 +34,14 @@ export function initWelcome() {
   });
   scene.add(new THREE.Points(starGeo, starMat));
 
-  // ── Earth sphere ───────────────────────────────────────────────────────────
+  // ── Earth sphere (texture-based) ──────────────────────────────────────────
+  const earthTexture = createEarthCanvasTexture();
   const earthGeo = new THREE.SphereGeometry(1, 80, 80);
 
   const earthMat = new THREE.ShaderMaterial({
     uniforms: {
       uLightDir: { value: new THREE.Vector3(1.5, 0.8, 1.0).normalize() },
+      uTexture: { value: earthTexture },
     },
     vertexShader: /* glsl */`
       varying vec3 vNormal;
@@ -53,11 +56,12 @@ export function initWelcome() {
     `,
     fragmentShader: /* glsl */`
       uniform vec3 uLightDir;
+      uniform sampler2D uTexture;
       varying vec3 vNormal;
       varying vec3 vPos;
       varying vec2 vUv;
 
-      // ---- noise helpers ----
+      // Minimal noise for city-light sparkle
       float hash(vec2 p) {
         return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
       }
@@ -71,68 +75,43 @@ export function initWelcome() {
           f.y
         );
       }
-      float fbm(vec2 p) {
-        float v = 0.0; float a = 0.5;
-        for (int i = 0; i < 7; i++) {
-          v += a * noise(p); p *= 2.03; a *= 0.49;
-        }
-        return v;
-      }
 
       void main() {
-        // --- land / ocean mask via 3-D position projected onto 2-D noise ---
-        vec2 np = vec2(
-          atan(vPos.z, vPos.x) * 0.8,
-          vPos.y * 1.6
-        );
-        float mask = fbm(np * 1.9 + 0.5);
-        mask = smoothstep(0.44, 0.56, mask);
+        // Land/ocean mask from real coastline texture
+        float mask = texture2D(uTexture, vUv).r;
 
-        // second layer for more organic coastlines
-        float detail = fbm(np * 4.2 + 1.7);
-        mask = clamp(mask + (detail - 0.5) * 0.22, 0.0, 1.0);
-        mask = smoothstep(0.38, 0.62, mask);
-
-        // --- colours ---
-        vec3 deepOcean    = vec3(0.02, 0.06, 0.18);
-        vec3 shallowOcean = vec3(0.04, 0.13, 0.32);
-        vec3 lowLand      = vec3(0.07, 0.16, 0.05);
-        vec3 highland     = vec3(0.11, 0.22, 0.08);
-
-        float oceanDepth = fbm(np * 3.5 + 2.1);
-        vec3 ocean = mix(deepOcean, shallowOcean, oceanDepth);
-
-        float elevation = fbm(np * 5.0 + 3.3);
-        vec3 land = mix(lowLand, highland, elevation);
-
+        // Black/gray palette
+        vec3 ocean = vec3(0.02, 0.02, 0.04);
+        vec3 land  = vec3(0.12, 0.12, 0.14);
         vec3 baseColor = mix(ocean, land, mask);
 
-        // polar ice caps
+        // Polar regions — slightly lighter gray
         float polar = smoothstep(0.72, 0.88, abs(vPos.y));
-        baseColor = mix(baseColor, vec3(0.55, 0.65, 0.75), polar);
+        baseColor = mix(baseColor, vec3(0.18, 0.18, 0.20), polar * mask);
 
-        // --- diffuse lighting ---
+        // Diffuse lighting
         float diff = max(dot(vNormal, uLightDir), 0.0);
         float ambient = 0.08;
         vec3 lit = baseColor * (ambient + diff * 0.92);
 
-        // specular highlight on oceans
+        // Specular on oceans — cool gray
         vec3 viewDir = vec3(0.0, 0.0, 1.0);
         vec3 halfDir = normalize(uLightDir + viewDir);
-        float spec = pow(max(dot(vNormal, halfDir), 0.0), 48.0) * (1.0 - mask) * 0.35;
-        lit += vec3(0.3, 0.55, 1.0) * spec;
+        float spec = pow(max(dot(vNormal, halfDir), 0.0), 48.0) * (1.0 - mask) * 0.25;
+        lit += vec3(0.3, 0.3, 0.35) * spec;
 
-        // --- city lights on night side ---
+        // City lights on night side — cool white
         float nightFactor = 1.0 - smoothstep(0.0, 0.25, diff);
-        float cityNoise = fbm(np * 12.0 + 5.5);
-        float cities = step(0.64, cityNoise) * mask * nightFactor * 0.6;
-        lit += vec3(1.0, 0.85, 0.4) * cities;
+        vec2 np = vUv * 40.0;
+        float cityNoise = noise(np);
+        float cities = step(0.72, cityNoise) * mask * nightFactor * 0.5;
+        lit += vec3(0.85, 0.85, 0.95) * cities;
 
-        // --- rim atmosphere ---
+        // Rim atmosphere — silver-gray
         vec3 camDir = vec3(0.0, 0.0, 1.0);
         float rim = 1.0 - max(dot(vNormal, camDir), 0.0);
         rim = pow(rim, 3.5);
-        lit += vec3(0.05, 0.22, 0.8) * rim * 0.55;
+        lit += vec3(0.2, 0.2, 0.25) * rim * 0.55;
 
         gl_FragColor = vec4(lit, 1.0);
       }
@@ -142,7 +121,7 @@ export function initWelcome() {
   const earth = new THREE.Mesh(earthGeo, earthMat);
   scene.add(earth);
 
-  // ── Atmosphere glow (outer shell) ──────────────────────────────────────────
+  // ── Atmosphere glow (outer shell) — silver-gray ────────────────────────────
   const atmosGeo = new THREE.SphereGeometry(1.06, 64, 64);
   const atmosMat = new THREE.ShaderMaterial({
     transparent: true,
@@ -151,10 +130,8 @@ export function initWelcome() {
     uniforms: {},
     vertexShader: /* glsl */`
       varying vec3 vNormal;
-      varying vec3 vPos;
       void main() {
         vNormal = normalize(normalMatrix * normal);
-        vPos = position;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
     `,
@@ -165,7 +142,7 @@ export function initWelcome() {
         float rim = 1.0 - max(dot(vNormal, camDir), 0.0);
         rim = pow(rim, 4.0);
         float alpha = rim * 0.6;
-        gl_FragColor = vec4(0.1, 0.35, 1.0, alpha);
+        gl_FragColor = vec4(0.25, 0.25, 0.3, alpha);
       }
     `,
   });
@@ -174,11 +151,11 @@ export function initWelcome() {
   // ── Mouse → rotation target ────────────────────────────────────────────────
   const mouse = { x: 0, y: 0 };
   const target = { x: 0, y: 0 };
-  const autoSpin = { y: 0 }; // slow auto-spin offset
+  const autoSpin = { y: 0 };
 
   window.addEventListener('mousemove', (e) => {
-    mouse.x = (e.clientX / window.innerWidth - 0.5) * 2;   // -1 … +1
-    mouse.y = (e.clientY / window.innerHeight - 0.5) * 2;  // -1 … +1
+    mouse.x = (e.clientX / window.innerWidth - 0.5) * 2;
+    mouse.y = (e.clientY / window.innerHeight - 0.5) * 2;
   });
 
   // ── Resize ─────────────────────────────────────────────────────────────────
@@ -196,14 +173,11 @@ export function initWelcome() {
     rafId = requestAnimationFrame(animate);
     const delta = clock.getDelta();
 
-    // Slow auto-spin keeps the globe alive even when cursor is static
     autoSpin.y += delta * 0.06;
 
-    // Cursor-driven target rotation (map mouse -1..+1 → ±1.2 rad)
     target.x = mouse.y * 0.55;
     target.y = mouse.x * 1.2 + autoSpin.y;
 
-    // Smooth lerp
     earth.rotation.x += (target.x - earth.rotation.x) * 0.06;
     earth.rotation.y += (target.y - earth.rotation.y) * 0.06;
 
