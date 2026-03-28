@@ -80,25 +80,19 @@ export function initWelcome() {
         // Land/ocean mask from real coastline texture
         float mask = texture2D(uTexture, vUv).r;
 
-        // Black/gray palette — brighter land for visibility
+        // Black/gray palette
         vec3 ocean = vec3(0.03, 0.03, 0.05);
-        vec3 land  = vec3(0.30, 0.30, 0.34);
+        vec3 land  = vec3(0.55, 0.55, 0.60);
         vec3 baseColor = mix(ocean, land, mask);
 
-        // Polar regions — lighter gray
+        // Polar regions — bright white-gray
         float polar = smoothstep(0.72, 0.88, abs(vPos.y));
-        baseColor = mix(baseColor, vec3(0.35, 0.35, 0.38), polar * mask);
+        baseColor = mix(baseColor, vec3(0.65, 0.65, 0.68), polar * mask);
 
-        // Diffuse lighting — higher ambient so land is always visible
+        // Diffuse lighting — generous ambient keeps dark side readable
         float diff = max(dot(vNormal, uLightDir), 0.0);
-        float ambient = 0.25;
-        vec3 lit = baseColor * (ambient + diff * 0.75);
-
-        // Specular on oceans — cool gray
-        vec3 viewDir = vec3(0.0, 0.0, 1.0);
-        vec3 halfDir = normalize(uLightDir + viewDir);
-        float spec = pow(max(dot(vNormal, halfDir), 0.0), 48.0) * (1.0 - mask) * 0.25;
-        lit += vec3(0.3, 0.3, 0.35) * spec;
+        float ambient = 0.35;
+        vec3 lit = baseColor * (ambient + diff * 0.65);
 
         // City lights on night side — cool white
         float nightFactor = 1.0 - smoothstep(0.0, 0.25, diff);
@@ -119,7 +113,11 @@ export function initWelcome() {
   });
 
   const earth = new THREE.Mesh(earthGeo, earthMat);
-  earth.rotation.y = 74 * (Math.PI / 180); // Start centered on New York
+  // Three.js SphereGeometry UV: phi=0 → longitude -180° (Pacific) faces camera.
+  // New York longitude = -74°. phi_NY = (-74+180)/360 * 2π ≈ 1.852 rad.
+  // To bring NY to front: rotation.y = -phi_NY.
+  const NY_PHI = ((-74 + 180) / 360) * Math.PI * 2; // ≈ 1.852 rad
+  earth.rotation.y = -NY_PHI;
   scene.add(earth);
 
   // ── Atmosphere glow (outer shell) — silver-gray ────────────────────────────
@@ -150,10 +148,8 @@ export function initWelcome() {
   scene.add(new THREE.Mesh(atmosGeo, atmosMat));
 
   // ── Mouse → rotation target ────────────────────────────────────────────────
-  // New York is at longitude -74°; rotate globe so NY faces camera when cursor is centered
-  const NY_OFFSET_Y = 74 * (Math.PI / 180); // ≈ 1.29 rad
   const mouse = { x: 0, y: 0 };
-  const target = { x: 0, y: 0 };
+  const target = { x: -NY_PHI, y: 0 }; // pre-seed to avoid lerp-in from 0
 
   window.addEventListener('mousemove', (e) => {
     mouse.x = (e.clientX / window.innerWidth - 0.5) * 2;   // -1 … +1
@@ -176,8 +172,9 @@ export function initWelcome() {
     const delta = clock.getDelta();
 
     // Full π range: cursor at edge → globe rotates 180° from center
+    // mouse.x=0 → -NY_PHI (New York at front); mouse.x=±1 → opposite side
     target.x = mouse.y * 0.8;
-    target.y = mouse.x * Math.PI + NY_OFFSET_Y;
+    target.y = -NY_PHI + mouse.x * Math.PI;
 
     earth.rotation.x += (target.x - earth.rotation.x) * 0.08;
     earth.rotation.y += (target.y - earth.rotation.y) * 0.08;

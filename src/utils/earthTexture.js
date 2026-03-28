@@ -21,9 +21,9 @@ export function createEarthCanvasTexture() {
   const toX = (lng) => ((lng + 180) / 360) * W;
   const toY = (lat) => ((90 - lat) / 180) * H;
 
-  // Draw land polygons — lighter gray for visibility
-  ctx.fillStyle = '#48484f';
-  ctx.strokeStyle = '#5a5a62';
+  // Draw land polygons — medium-light gray
+  ctx.fillStyle = '#8c8c96';
+  ctx.strokeStyle = '#9e9ea8';
   ctx.lineWidth = 1.2;
 
   for (const ring of LAND_POLYGONS) {
