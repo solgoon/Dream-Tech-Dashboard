@@ -79,11 +79,12 @@ export function initWelcome() {
         float ambient = 0.35;
         vec3 lit = baseColor * (ambient + diff * 0.65);
 
-        // Rim atmosphere — silver-gray
+        // Thin warm bright ring — placed on the Earth surface so it sits
+        // right at the globe edge with no gap. pow(70) ≈ 4px half-width.
         vec3 camDir = vec3(0.0, 0.0, 1.0);
-        float rim = 1.0 - max(dot(vNormal, camDir), 0.0);
-        rim = pow(rim, 3.5);
-        lit += vec3(0.2, 0.2, 0.25) * rim * 0.55;
+        float rimFactor = 1.0 - max(dot(vNormal, camDir), 0.0);
+        float brightRing = pow(rimFactor, 70.0) * 1.1;
+        lit += vec3(1.0, 0.97, 0.92) * brightRing;
 
         gl_FragColor = vec4(lit, 1.0);
       }
@@ -122,47 +123,13 @@ export function initWelcome() {
       void main() {
         vec3 camDir = vec3(0.0, 0.0, 1.0);
         float rim = 1.0 - max(dot(vNormal, camDir), 0.0);
-        rim = pow(rim, 4.0);
-        float alpha = rim * 0.6;
-        gl_FragColor = vec4(0.25, 0.25, 0.3, alpha);
+        // Gradient haze: fades from warm-white at globe edge outward to nothing
+        float haze = pow(rim, 3.5) * 0.22;
+        gl_FragColor = vec4(0.95, 0.93, 0.88, haze);
       }
     `,
   });
   scene.add(new THREE.Mesh(atmosGeo, atmosMat));
-
-  // ── Sunlit corona — thin warm halo around globe edge ──────────────────────
-  // BackSide renders the inner surface; from outside the sphere this appears
-  // as a rim that is brightest at the limb and fades outward naturally.
-  const coronaGeo = new THREE.SphereGeometry(1.12, 64, 64);
-  const coronaMat = new THREE.ShaderMaterial({
-    transparent: true,
-    side: THREE.BackSide,
-    depthWrite: false,
-    uniforms: {},
-    vertexShader: /* glsl */`
-      varying vec3 vNormal;
-      void main() {
-        vNormal = normalize(normalMatrix * normal);
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: /* glsl */`
-      varying vec3 vNormal;
-      void main() {
-        vec3 camDir = vec3(0.0, 0.0, 1.0);
-        float rim = 1.0 - max(dot(vNormal, camDir), 0.0);
-
-        // Two-layer: sharp bright line at limb + very soft outward gradient
-        float brightLine = pow(rim, 55.0) * 2.50; // razor-thin, very bright
-        float softGlow   = pow(rim,  2.5) * 0.045; // wide gentle gradient fade
-        float alpha = brightLine + softGlow;
-
-        // near-white, whisper of warmth
-        gl_FragColor = vec4(1.0, 0.98, 0.94, alpha);
-      }
-    `,
-  });
-  scene.add(new THREE.Mesh(coronaGeo, coronaMat));
 
   // ── Mouse → rotation target ────────────────────────────────────────────────
   const mouse = { x: 0, y: 0 };
