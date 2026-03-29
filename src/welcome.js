@@ -15,7 +15,7 @@ export function initWelcome() {
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-  camera.position.z = 2.8;
+  camera.position.z = 2.1;
 
   // ── Stars ──────────────────────────────────────────────────────────────────
   const starGeo = new THREE.BufferGeometry();
@@ -61,21 +61,6 @@ export function initWelcome() {
       varying vec3 vPos;
       varying vec2 vUv;
 
-      // Minimal noise for city-light sparkle
-      float hash(vec2 p) {
-        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
-      }
-      float noise(vec2 p) {
-        vec2 i = floor(p);
-        vec2 f = fract(p);
-        f = f * f * (3.0 - 2.0 * f);
-        return mix(
-          mix(hash(i), hash(i + vec2(1,0)), f.x),
-          mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), f.x),
-          f.y
-        );
-      }
-
       void main() {
         // Land/ocean mask from real coastline texture
         float mask = texture2D(uTexture, vUv).r;
@@ -94,13 +79,6 @@ export function initWelcome() {
         float ambient = 0.35;
         vec3 lit = baseColor * (ambient + diff * 0.65);
 
-        // City lights on night side — cool white
-        float nightFactor = 1.0 - smoothstep(0.0, 0.25, diff);
-        vec2 np = vUv * 40.0;
-        float cityNoise = noise(np);
-        float cities = step(0.72, cityNoise) * mask * nightFactor * 0.5;
-        lit += vec3(0.85, 0.85, 0.95) * cities;
-
         // Rim atmosphere — silver-gray
         vec3 camDir = vec3(0.0, 0.0, 1.0);
         float rim = 1.0 - max(dot(vNormal, camDir), 0.0);
@@ -113,11 +91,14 @@ export function initWelcome() {
   });
 
   const earth = new THREE.Mesh(earthGeo, earthMat);
-  // Three.js SphereGeometry UV: phi=0 → longitude -180° (Pacific) faces camera.
-  // New York longitude = -74°. phi_NY = (-74+180)/360 * 2π ≈ 1.852 rad.
-  // To bring NY to front: rotation.y = -phi_NY.
+  // Three.js SphereGeometry vertex: z = sin(phi)*sin(theta).
+  // After rotation.y=R, z_world = sin(theta)*sin(phi+R), max when phi+R = π/2.
+  // Front is at phi = π/2 − R  →  R = π/2 − phi_target.
+  // New York longitude = −74°, phi_NY = (−74+180)/360 × 2π ≈ 1.852 rad.
+  // NY_ROT = π/2 − phi_NY ≈ −0.279 rad.
   const NY_PHI = ((-74 + 180) / 360) * Math.PI * 2; // ≈ 1.852 rad
-  earth.rotation.y = -NY_PHI;
+  const NY_ROT = Math.PI / 2 - NY_PHI;               // ≈ −0.279 rad
+  earth.rotation.y = NY_ROT;
   scene.add(earth);
 
   // ── Atmosphere glow (outer shell) — silver-gray ────────────────────────────
@@ -149,7 +130,7 @@ export function initWelcome() {
 
   // ── Mouse → rotation target ────────────────────────────────────────────────
   const mouse = { x: 0, y: 0 };
-  const target = { x: -NY_PHI, y: 0 }; // pre-seed to avoid lerp-in from 0
+  const target = { x: 0, y: NY_ROT };
 
   window.addEventListener('mousemove', (e) => {
     mouse.x = (e.clientX / window.innerWidth - 0.5) * 2;   // -1 … +1
@@ -165,16 +146,14 @@ export function initWelcome() {
 
   // ── Animation loop ─────────────────────────────────────────────────────────
   let rafId = null;
-  const clock = new THREE.Clock();
 
   function animate() {
     rafId = requestAnimationFrame(animate);
-    const delta = clock.getDelta();
 
-    // Full π range: cursor at edge → globe rotates 180° from center
-    // mouse.x=0 → -NY_PHI (New York at front); mouse.x=±1 → opposite side
+    // cursor center → NY_ROT (New York faces camera)
+    // cursor right edge → NY_ROT − π (opposite side of globe)
     target.x = mouse.y * 0.8;
-    target.y = -NY_PHI + mouse.x * Math.PI;
+    target.y = NY_ROT - mouse.x * Math.PI;
 
     earth.rotation.x += (target.x - earth.rotation.x) * 0.08;
     earth.rotation.y += (target.y - earth.rotation.y) * 0.08;
