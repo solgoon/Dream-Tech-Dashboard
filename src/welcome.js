@@ -153,8 +153,8 @@ export function initWelcome() {
         float rim = 1.0 - max(dot(vNormal, camDir), 0.0);
 
         // Two-layer: sharp bright line at limb + very soft outward gradient
-        float brightLine = pow(rim, 65.0) * 0.90; // razor-thin pixel-wide ring
-        float softGlow   = pow(rim,  8.0) * 0.022; // steeper fade, gone much sooner
+        float brightLine = pow(rim, 55.0) * 2.50; // razor-thin, very bright
+        float softGlow   = pow(rim,  2.5) * 0.045; // wide gentle gradient fade
         float alpha = brightLine + softGlow;
 
         // near-white, whisper of warmth
