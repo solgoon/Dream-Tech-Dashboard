@@ -133,7 +133,7 @@ export function initWelcome() {
   // ── Sunlit corona — thin warm halo around globe edge ──────────────────────
   // BackSide renders the inner surface; from outside the sphere this appears
   // as a rim that is brightest at the limb and fades outward naturally.
-  const coronaGeo = new THREE.SphereGeometry(1.22, 64, 64);
+  const coronaGeo = new THREE.SphereGeometry(1.12, 64, 64);
   const coronaMat = new THREE.ShaderMaterial({
     transparent: true,
     side: THREE.BackSide,
@@ -151,10 +151,10 @@ export function initWelcome() {
       void main() {
         vec3 camDir = vec3(0.0, 0.0, 1.0);
         float rim = 1.0 - max(dot(vNormal, camDir), 0.0);
-        rim = pow(rim, 10.0);          // high power = thin, sharp ring
-        float alpha = rim * 0.45;
-        // warm white-amber sunlight tone
-        gl_FragColor = vec4(1.0, 0.94, 0.78, alpha);
+        rim = pow(rim, 28.0);          // very high power = razor-thin ring
+        float alpha = rim * 0.22;
+        // near-white with the faintest warmth
+        gl_FragColor = vec4(1.0, 0.97, 0.90, alpha);
       }
     `,
   });
