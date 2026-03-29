@@ -151,10 +151,14 @@ export function initWelcome() {
       void main() {
         vec3 camDir = vec3(0.0, 0.0, 1.0);
         float rim = 1.0 - max(dot(vNormal, camDir), 0.0);
-        rim = pow(rim, 28.0);          // very high power = razor-thin ring
-        float alpha = rim * 0.22;
-        // near-white with the faintest warmth
-        gl_FragColor = vec4(1.0, 0.97, 0.90, alpha);
+
+        // Two-layer: sharp bright line at limb + very soft outward gradient
+        float brightLine = pow(rim, 16.0) * 0.75; // thin, visible ring at edge
+        float softGlow   = pow(rim,  3.5) * 0.04;  // barely-there gradient fade
+        float alpha = brightLine + softGlow;
+
+        // near-white, whisper of warmth
+        gl_FragColor = vec4(1.0, 0.98, 0.94, alpha);
       }
     `,
   });
