@@ -15,7 +15,7 @@ export function initWelcome() {
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-  camera.position.z = 2.1;
+  camera.position.z = 2.8;
 
   // ── Stars ──────────────────────────────────────────────────────────────────
   const starGeo = new THREE.BufferGeometry();
@@ -96,9 +96,11 @@ export function initWelcome() {
   // Front is at phi = π/2 − R  →  R = π/2 − phi_target.
   // New York longitude = −74°, phi_NY = (−74+180)/360 × 2π ≈ 1.852 rad.
   // NY_ROT = π/2 − phi_NY ≈ −0.279 rad.
-  const NY_PHI = ((-74 + 180) / 360) * Math.PI * 2; // ≈ 1.852 rad
-  const NY_ROT = Math.PI / 2 - NY_PHI;               // ≈ −0.279 rad
+  const NY_PHI  = ((-74 + 180) / 360) * Math.PI * 2; // ≈ 1.852 rad
+  const NY_ROT  = Math.PI / 2 - NY_PHI;               // ≈ −0.279 rad — longitude fix
+  const NY_TILT = 40.71 * Math.PI / 180;              // ≈  0.710 rad — latitude fix (40.7°N)
   earth.rotation.y = NY_ROT;
+  earth.rotation.x = NY_TILT;
   scene.add(earth);
 
   // ── Atmosphere glow (outer shell) — silver-gray ────────────────────────────
@@ -128,9 +130,39 @@ export function initWelcome() {
   });
   scene.add(new THREE.Mesh(atmosGeo, atmosMat));
 
+  // ── Sunlit corona — thin warm halo around globe edge ──────────────────────
+  // BackSide renders the inner surface; from outside the sphere this appears
+  // as a rim that is brightest at the limb and fades outward naturally.
+  const coronaGeo = new THREE.SphereGeometry(1.22, 64, 64);
+  const coronaMat = new THREE.ShaderMaterial({
+    transparent: true,
+    side: THREE.BackSide,
+    depthWrite: false,
+    uniforms: {},
+    vertexShader: /* glsl */`
+      varying vec3 vNormal;
+      void main() {
+        vNormal = normalize(normalMatrix * normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: /* glsl */`
+      varying vec3 vNormal;
+      void main() {
+        vec3 camDir = vec3(0.0, 0.0, 1.0);
+        float rim = 1.0 - max(dot(vNormal, camDir), 0.0);
+        rim = pow(rim, 10.0);          // high power = thin, sharp ring
+        float alpha = rim * 0.45;
+        // warm white-amber sunlight tone
+        gl_FragColor = vec4(1.0, 0.94, 0.78, alpha);
+      }
+    `,
+  });
+  scene.add(new THREE.Mesh(coronaGeo, coronaMat));
+
   // ── Mouse → rotation target ────────────────────────────────────────────────
   const mouse = { x: 0, y: 0 };
-  const target = { x: 0, y: NY_ROT };
+  const target = { x: NY_TILT, y: NY_ROT }; // pre-seeded — no lerp-in at startup
 
   window.addEventListener('mousemove', (e) => {
     mouse.x = (e.clientX / window.innerWidth - 0.5) * 2;   // -1 … +1
@@ -152,8 +184,9 @@ export function initWelcome() {
 
     // cursor center → NY_ROT (New York faces camera)
     // cursor right edge → NY_ROT − π (opposite side of globe)
-    target.x = mouse.y * 0.8;
-    target.y = NY_ROT - mouse.x * Math.PI;
+    // cursor center → NY_TILT / NY_ROT (New York at lat 40.7°N, lng −74° faces camera)
+    target.x = NY_TILT + mouse.y * 0.8;
+    target.y = NY_ROT  - mouse.x * Math.PI;
 
     earth.rotation.x += (target.x - earth.rotation.x) * 0.08;
     earth.rotation.y += (target.y - earth.rotation.y) * 0.08;
