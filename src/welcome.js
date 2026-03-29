@@ -153,8 +153,8 @@ export function initWelcome() {
         float rim = 1.0 - max(dot(vNormal, camDir), 0.0);
 
         // Two-layer: sharp bright line at limb + very soft outward gradient
-        float brightLine = pow(rim, 16.0) * 0.75; // thin, visible ring at edge
-        float softGlow   = pow(rim,  3.5) * 0.04;  // barely-there gradient fade
+        float brightLine = pow(rim, 28.0) * 0.75; // thin, visible ring at edge
+        float softGlow   = pow(rim,  4.5) * 0.03;  // barely-there gradient fade
         float alpha = brightLine + softGlow;
 
         // near-white, whisper of warmth
