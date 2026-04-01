@@ -11,7 +11,7 @@ html:has(#welcome-overlay:not(.hidden)) body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   overflow: hidden;
   transition: opacity 0.8s ease, visibility 0.8s ease;
 }
@@ -36,6 +36,7 @@ html:has(#welcome-overlay:not(.hidden)) body {
   text-align: center;
   pointer-events: none;
   user-select: none;
+  margin-top: 10vh;
 }
 
 .welcome-title {
@@ -45,14 +46,16 @@ html:has(#welcome-overlay:not(.hidden)) body {
   color: #fff;
   letter-spacing: 0.04em;
   margin: 0 0 0.35em;
-  text-shadow: 0 0 40px rgba(200, 200, 220, 0.4);
+  text-shadow:
+    0 0 60px rgba(200, 210, 255, 0.5),
+    0 0 120px rgba(180, 200, 255, 0.2);
 }
 
 .welcome-subtitle {
   font-family: 'Inter', sans-serif;
   font-size: clamp(0.85rem, 1.8vw, 1.1rem);
   font-weight: 400;
-  color: rgba(200, 200, 210, 0.7);
+  color: rgba(180, 200, 230, 0.75);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   margin: 0 0 2.5em;
@@ -64,9 +67,9 @@ html:has(#welcome-overlay:not(.hidden)) body {
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(210, 210, 220, 0.9);
+  color: rgba(200, 210, 230, 0.9);
   background: transparent;
-  border: 1px solid rgba(160, 160, 180, 0.4);
+  border: 1px solid rgba(140, 160, 200, 0.4);
   border-radius: 2px;
   padding: 0.75em 2.2em;
   cursor: pointer;
@@ -76,10 +79,10 @@ html:has(#welcome-overlay:not(.hidden)) body {
 }
 
 .welcome-enter-btn:hover {
-  background: rgba(180, 180, 200, 0.1);
-  border-color: rgba(180, 180, 200, 0.7);
+  background: rgba(140, 170, 220, 0.12);
+  border-color: rgba(160, 180, 220, 0.7);
   color: #fff;
-  box-shadow: 0 0 24px rgba(180, 180, 200, 0.25);
+  box-shadow: 0 0 30px rgba(140, 170, 220, 0.3);
 }
 
 .welcome-enter-btn:active {
