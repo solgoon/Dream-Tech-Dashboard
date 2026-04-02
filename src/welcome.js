@@ -16,27 +16,23 @@ export function initWelcome() {
   renderer.toneMappingExposure = 1.0;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
+  const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 5000);
 
   // ── Constants ─────────────────────────────────────────────────────────────
   const EARTH_RADIUS = 100;
-  const CAMERA_ALT = 2.8;                       // altitude above surface
   const SUN_DISTANCE = 500;
 
-  // Sun direction — at the horizon, slightly above Earth's limb
-  const sunDir = new THREE.Vector3(1, 0.08, 0.3).normalize();
+  // Sun direction — left side, at the horizon, slightly above Earth's limb
+  const sunDir = new THREE.Vector3(-0.75, 0.10, -0.45).normalize();
   const sunWorldPos = sunDir.clone().multiplyScalar(SUN_DISTANCE);
 
-  // Camera: sitting above the North Atlantic, looking toward sunrise
-  const camBasePos = new THREE.Vector3(0, EARTH_RADIUS + CAMERA_ALT, 0);
+  // Camera: low equatorial orbit, looking slightly left-downward at the surface
+  // This creates the "overview" curved horizon filling the lower half of the screen
+  const camBasePos = new THREE.Vector3(0, 6, 106);
   camera.position.copy(camBasePos);
 
-  // Look toward the horizon where the sun is — slightly below eye level
-  const lookTarget = new THREE.Vector3(
-    sunDir.x * 200,
-    EARTH_RADIUS - 1.5,
-    sunDir.z * 200
-  );
+  // Look slightly left and down toward Earth's center region
+  const lookTarget = new THREE.Vector3(-20, -12, 0);
   camera.lookAt(lookTarget);
 
   // ── Stars ─────────────────────────────────────────────────────────────────
@@ -102,32 +98,32 @@ export function initWelcome() {
         // Land/ocean mask
         float mask = texture2D(uTexture, vUv).r;
 
-        // Base colors
-        vec3 ocean = vec3(0.02, 0.03, 0.06);
-        vec3 land  = vec3(0.45, 0.45, 0.48);
+        // Base colors — dark navy ocean, earthy brown land
+        vec3 ocean = vec3(0.01, 0.03, 0.10);
+        vec3 land  = vec3(0.25, 0.20, 0.16);
         vec3 baseColor = mix(ocean, land, mask);
 
-        // Polar highlight
-        float polar = smoothstep(0.72, 0.88, abs(normalize(vWorldPos).y));
-        baseColor = mix(baseColor, vec3(0.6, 0.6, 0.63), polar * mask);
+        // Polar caps — brighter, wider range
+        float polar = smoothstep(0.68, 0.90, abs(normalize(vWorldPos).y));
+        baseColor = mix(baseColor, vec3(0.75, 0.78, 0.80), polar * mask);
 
         // Diffuse lighting — very low ambient for dramatic dark side
         float NdotL = dot(N, L);
         float diff = max(NdotL, 0.0);
 
-        // Ambient — extremely low so dark side is nearly black
-        float ambient = 0.015;
-        vec3 lit = baseColor * (ambient + diff * 1.2);
+        // Ambient — low so dark side is nearly black, higher than before for dim detail
+        float ambient = 0.025;
+        vec3 lit = baseColor * (ambient + diff * 1.4);
 
         // Terminator warm tint — subtle orange near the day/night boundary
         float terminator = smoothstep(-0.08, 0.15, NdotL) * (1.0 - smoothstep(0.15, 0.4, NdotL));
         vec3 warmTint = vec3(0.6, 0.3, 0.1);
-        lit += warmTint * terminator * 0.15 * (0.3 + mask * 0.7);
+        lit += warmTint * terminator * 0.18 * (0.3 + mask * 0.7);
 
         // Sunrise warm boost — fragments close to sun direction get amber light
         float sunAngle = max(dot(N, L), 0.0);
         float sunriseZone = smoothstep(0.0, 0.3, sunAngle) * (1.0 - smoothstep(0.3, 0.7, sunAngle));
-        lit += vec3(0.4, 0.25, 0.08) * sunriseZone * 0.1;
+        lit += vec3(0.4, 0.25, 0.08) * sunriseZone * 0.12;
 
         gl_FragColor = vec4(lit, 1.0);
       }
@@ -135,10 +131,17 @@ export function initWelcome() {
   });
 
   const earth = new THREE.Mesh(earthGeo, earthMat);
-  // Rotate to show interesting landmasses near the visible horizon
-  earth.rotation.y = -0.5;
+  // X tilt stays on the mesh; Y rotation is driven entirely by earthGroup
   earth.rotation.x = 0.15;
-  scene.add(earth);
+  earth.rotation.y = 0;
+
+  // Wrap in a group so mouse interaction rotates the whole globe
+  // NOTE: atmosphere meshes stay in scene (not earthGroup) — they use world-space
+  // camera/sun uniforms and must not co-rotate with the surface geometry
+  const earthGroup = new THREE.Group();
+  earthGroup.rotation.y = -0.5;  // initial orientation to show interesting landmasses
+  earthGroup.add(earth);
+  scene.add(earthGroup);
 
   // ── Atmospheric Limb (thin blue line) ────────────────────────────────────
   const atmosRadius = EARTH_RADIUS + 0.8;
@@ -184,17 +187,17 @@ export function initWelcome() {
         float sunGlow = pow(sunProximity, 2.0);
 
         // Base atmosphere color — vivid blue
-        vec3 atmosBlue = vec3(0.25, 0.50, 1.0);
+        vec3 atmosBlue = vec3(0.20, 0.55, 1.0);
 
-        // Near sun — shift toward white-gold
-        vec3 sunColor = vec3(1.0, 0.92, 0.75);
-        vec3 atmosColor = mix(atmosBlue, sunColor, sunGlow * 0.8);
+        // Near sun — shift toward white-gold (more orange)
+        vec3 sunColor = vec3(1.0, 0.88, 0.60);
+        vec3 atmosColor = mix(atmosBlue, sunColor, sunGlow * 0.9);
 
         // Intensity — brighter near sun, dimmer away
         float intensity = thinBand * (0.4 + sunGlow * 2.0);
 
         // Enhance the blue line visibility
-        intensity *= 1.8;
+        intensity *= 2.5;
 
         // Only show atmosphere on the lit side and transition zone
         float litSide = smoothstep(-0.3, 0.2, dot(N, normalize(uSunPos)));
@@ -242,7 +245,7 @@ export function initWelcome() {
         float sunProximity = max(dot(N, toSun), 0.0);
         float sunFactor = pow(sunProximity, 3.0);
 
-        vec3 color = mix(vec3(0.15, 0.3, 0.8), vec3(0.9, 0.85, 0.7), sunFactor);
+        vec3 color = mix(vec3(0.15, 0.3, 0.8), vec3(0.9, 0.75, 0.5), sunFactor);
         float alpha = glow * (0.3 + sunFactor * 1.5);
 
         float litSide = smoothstep(-0.2, 0.3, dot(N, normalize(uSunPos)));
@@ -261,19 +264,21 @@ export function initWelcome() {
     const ctx = c.getContext('2d');
     const cx = size / 2;
     const g = ctx.createRadialGradient(cx, cx, 0, cx, cx, cx);
-    g.addColorStop(0, 'rgba(255, 255, 248, 1.0)');
-    g.addColorStop(0.02, 'rgba(255, 252, 240, 0.95)');
-    g.addColorStop(0.08, 'rgba(255, 240, 200, 0.7)');
-    g.addColorStop(0.25, 'rgba(255, 210, 130, 0.3)');
-    g.addColorStop(0.5, 'rgba(255, 180, 80, 0.1)');
-    g.addColorStop(1.0, 'rgba(255, 150, 50, 0.0)');
+    // More saturated orange-gold gradient
+    g.addColorStop(0,    'rgba(255, 248, 220, 1.0)');
+    g.addColorStop(0.02, 'rgba(255, 240, 200, 0.97)');
+    g.addColorStop(0.08, 'rgba(255, 220, 150, 0.80)');
+    g.addColorStop(0.25, 'rgba(255, 160,  60, 0.45)');
+    g.addColorStop(0.5,  'rgba(255, 130,  40, 0.18)');
+    g.addColorStop(1.0,  'rgba(255, 100,  20, 0.00)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, size, size);
     return new THREE.CanvasTexture(c);
   }
 
-  // Position sun at the horizon
-  const sunSpritePos = sunDir.clone().multiplyScalar(300);
+  // Position sun sprite at Earth's limb in the sun direction
+  // This makes the sun appear at/partially below the horizon — like a sunrise
+  const sunSpritePos = sunDir.clone().multiplyScalar(EARTH_RADIUS * 1.005);
   const sunSpriteMat = new THREE.SpriteMaterial({
     map: createSunTexture(512),
     blending: THREE.AdditiveBlending,
@@ -284,7 +289,7 @@ export function initWelcome() {
   });
   const sunSprite = new THREE.Sprite(sunSpriteMat);
   sunSprite.position.copy(sunSpritePos);
-  sunSprite.scale.set(60, 60, 1);
+  sunSprite.scale.set(90, 90, 1);
   sunSprite.renderOrder = 10;
   scene.add(sunSprite);
 
@@ -341,7 +346,7 @@ export function initWelcome() {
   });
   const godRaySprite = new THREE.Sprite(godRayMat);
   godRaySprite.position.copy(sunSpritePos);
-  godRaySprite.scale.set(180, 180, 1);
+  godRaySprite.scale.set(250, 250, 1);
   godRaySprite.renderOrder = 9;
   scene.add(godRaySprite);
 
@@ -371,11 +376,11 @@ export function initWelcome() {
   });
   const horizonGlow = new THREE.Sprite(horizonGlowMat);
   horizonGlow.position.copy(sunSpritePos);
-  horizonGlow.scale.set(350, 150, 1);
+  horizonGlow.scale.set(400, 180, 1);
   horizonGlow.renderOrder = 8;
   scene.add(horizonGlow);
 
-  // ── Mouse → parallax ─────────────────────────────────────────────────────
+  // ── Mouse → globe rotation + camera parallax ──────────────────────────────
   const mouse = { x: 0, y: 0 };
   const smoothMouse = { x: 0, y: 0 };
 
@@ -394,27 +399,32 @@ export function initWelcome() {
   // ── Animation loop ────────────────────────────────────────────────────────
   let rafId = null;
   const clock = new THREE.Clock();
+  // Auto-rotation accumulator — starts at earthGroup's initial Y rotation
+  let autoRotY = -0.5;
 
   function animate() {
     rafId = requestAnimationFrame(animate);
     const t = clock.getElapsedTime();
 
-    // Smooth mouse following
-    smoothMouse.x += (mouse.x - smoothMouse.x) * 0.06;
-    smoothMouse.y += (mouse.y - smoothMouse.y) * 0.06;
+    // Smooth mouse following — faster easing for more responsive feel
+    smoothMouse.x += (mouse.x - smoothMouse.x) * 0.08;
+    smoothMouse.y += (mouse.y - smoothMouse.y) * 0.08;
 
-    // Subtle camera parallax
-    camera.position.x = camBasePos.x + smoothMouse.x * 0.4;
-    camera.position.z = camBasePos.z + smoothMouse.y * 0.2;
-    camera.position.y = camBasePos.y + smoothMouse.y * -0.1;
+    // Camera parallax — perceptible X shift, subtle Y shift
+    camera.position.x = camBasePos.x + smoothMouse.x * 1.5;
+    camera.position.y = camBasePos.y + smoothMouse.y * -0.3;
     camera.lookAt(lookTarget);
 
-    // Slow Earth rotation for subtle motion
-    earth.rotation.y += 0.0003;
+    // Accumulate auto-rotation
+    autoRotY += 0.0003;
+
+    // Mouse X spins the globe; mouse Y tilts it slightly
+    earthGroup.rotation.y = autoRotY + smoothMouse.x * 0.4;
+    earthGroup.rotation.x = smoothMouse.y * 0.08;
 
     // Sun pulse
     const pulse = 1.0 + Math.sin(t * 0.5) * 0.03;
-    sunSprite.scale.set(60 * pulse, 60 * pulse, 1);
+    sunSprite.scale.set(90 * pulse, 90 * pulse, 1);
 
     // God ray slow rotation
     godRaySprite.material.rotation = t * 0.02;
