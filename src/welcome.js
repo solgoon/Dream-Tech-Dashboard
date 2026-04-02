@@ -23,7 +23,7 @@ export function initWelcome() {
   const SUN_DISTANCE = 500;
 
   // Sun direction — left side, at the horizon, slightly above Earth's limb
-  const sunDir = new THREE.Vector3(-0.75, 0.10, -0.45).normalize();
+  const sunDir = new THREE.Vector3(-0.85, 0.12, 0.30).normalize();
   const sunWorldPos = sunDir.clone().multiplyScalar(SUN_DISTANCE);
 
   // Camera: low equatorial orbit, looking slightly left-downward at the surface
